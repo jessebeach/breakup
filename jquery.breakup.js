@@ -18,21 +18,22 @@
  */
 
 (function (factory) {
-	// Load this plugin with require.js if available.
-	if (typeof define === 'function' && define.amd) {
-		// AMD. Register as an anonymous module.
-		define(['jquery'], factory);
-	} else {
-		// If jQuery is not defined, warn the user and return.
-		if (window.jQuery === undefined) {
-			if (typeof window.console === 'object' && typeof window.console.log === 'function') {
-				console.log("The plugin \"pluginName\" failed to run because jQuery is not present.");
-			}
-			return null;
-		}
-		// Call the plugin factory. jQuery is a global object.
-		factory();
-	}
+  // Load this plugin with require.js if available.
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define(['jquery'], factory);
+  } 
+  else {
+    // If jQuery is not defined, warn the user and return.
+    if (window.jQuery === undefined) {
+      if (typeof window.console === 'object' && typeof window.console.log === 'function') {
+        console.log("The plugin \"pluginName\" failed to run because jQuery is not present.");
+      }
+      return null;
+    }
+    // Call the plugin factory. jQuery is a global object.
+    factory();
+  }
 }
 // The plugin factory function.
 (function () {
@@ -66,11 +67,23 @@
   /**
    * This exists because $.proxy can't be overloaded in jQuery 1.4.
    */
-  function buildProxy(fn, context) {
-    var args = Array.prototype.slice.call(arguments, 2);
-    return function () {
-      fn.apply(context, args);
+  function buildProxy() {
+    var fn = arguments[0];
+    var context = arguments[1];
+    // Pull the top two args -- fn and context -- off the arguments array.
+    for (var i = 0; i < 2; i++) {
+      Array.prototype.shift.call(arguments);
     }
+    // Get a local reference to the arguments.
+    var args = Array.prototype.slice.call(arguments);
+    return (function () {
+      // Push the callers arguments into the arguments list.
+      // This will most likely be an $.Event object.
+      for (var i = 0; i < arguments.length; i++) {
+        args.unshift(arguments[i]);
+      }
+      fn.apply(context, args);
+    });
   }
   /**
   * Get the screen width.
@@ -81,11 +94,17 @@
   /**
    *
    */
-  function setBreakPoints (options, args) {
-    var args = arguments;
+  function setBreakPoints (opts) {
+    var options = opts;
     var br;
     var index;
     if (typeof options === 'object') {
+      // Remove the options from the arguments array.
+      Array.prototype.shift.call(arguments);
+      // Unshift the context onto the object.
+      var that = this;
+      Array.prototype.unshift.call(arguments, that);
+      // Loop through the breakpoints.
       for (br in options) {
         if (options.hasOwnProperty(br)) {
           if (isNaN(br) && br !== 'default') {
@@ -95,7 +114,13 @@
           if (typeof options[br] === 'function') {
             // Represent the default breakpoint as zero internally.
             index = (br === 'default') ? '0': br;
-            breakPoints[index] = buildProxy(options[br], this, args);
+            // Unshift the function into the arguments.
+            Array.prototype.unshift.call(arguments, options[br]);
+            var args = Array.prototype.slice.call(arguments);
+            // Build a proxy from the function and store it.
+            breakPoints[index] = buildProxy.apply(this, arguments);
+            // Shift the function off the arguments.
+            Array.prototype.shift.call(arguments);
           }
           else {
             log('[' + plugin + '] ' + options[br] + ', for the breakpoint ' + br + ' is not a function.', 'info');
@@ -129,7 +154,7 @@
       var $this = $(this);
       var callback = getBreakPointHandler();
       if (typeof callback === 'function') {
-        callback.apply($this, arguments);
+        callback(event);
         updated = true;
         return;
       }
@@ -157,15 +182,14 @@
       $this.trigger('breakChanged');
     }
   }
-  function initialize (options) {
-    // Get the 
-    var args = Array.prototype.slice.call(arguments, 1);
+  function initialize () {
+    var $this = $(this);
     // Register the callbacks.
-    setBreakPoints.apply(this, arguments);
+    setBreakPoints.apply($this, arguments);
     // Register a custom 'breakChanged' event on the document.
-    this.bind('breakChanged' + '.' + plugin, breakChangeHandler);
+    $this.bind('breakChanged' + '.' + plugin, breakChangeHandler);
     // Register a handler on the window resize event.
-    var f = buildProxy(breakCheck, this);
+    var f = buildProxy(breakCheck, $this);
     $(window).bind('resize' + '.' + plugin, f);
     $(window).bind('load' + '.' + plugin, f);
   }
@@ -177,11 +201,14 @@
       // Build main options before element iteration.
       var options = $.extend({}, $.fn[plugin].defaults, opts);
       // Strip the opts from the arguments list.
-      var args = Array.prototype.slice.call(arguments, 1);
-      // Build a proxy function for initialization with the passed-in args.
-      var initFunc = buildProxy(initialize, this, options, args);
-      // Iterate over matched elements.
-      return this.each(initFunc);
+      Array.prototype.shift.call(arguments);
+      // Unshift the options back into the arguments.
+      Array.prototype.unshift.call(arguments, options);
+      for (var i = 0; i < this.length; i++) {
+        initialize.apply(this[i], arguments);
+      }
+      // Return the original jQuery set.
+      return this;
     },
     destroy : function () {},
     unset: function () {}
