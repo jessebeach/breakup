@@ -38,7 +38,7 @@
 // The plugin factory function.
 (function () {
   // Replace 'pluginName' with the name of your plugin.
-  var plugin = 'breakUp',
+  var plugin = 'breakup',
   // A private reference to this $plugin object.
   $plugin,
   // Local copies of context globals (sandbox).
@@ -51,7 +51,7 @@
   html = document.documentElement,
   textDirection = (html.dir) ? html.dir : 'ltr';
   
-  var currentBreak = '0';
+  var currentBreak;
   var breakPoints = {};
   var updated = false;
 	
@@ -204,9 +204,8 @@
       Array.prototype.shift.call(arguments);
       // Unshift the options back into the arguments.
       Array.prototype.unshift.call(arguments, options);
-      for (var i = 0; i < this.length; i++) {
-        initialize.apply(this[i], arguments);
-      }
+      // Init on the set of jQuery elements.
+      initialize.apply(this, arguments);
       // Return the original jQuery set.
       return this;
     },
@@ -227,9 +226,9 @@
       $.error('Method ' +  method + ' does not exist on jQuery.' + plugin);
     }
   };
-		
-	// plugin defaults
-	$.fn[plugin].defaults = {
-  	'default': $.noop
-	};
+  
+  // plugin defaults
+  $.fn[plugin].defaults = {
+    'default': $.noop
+  };
 }));
