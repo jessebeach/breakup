@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+  <head>
+    <title>BreakUp</title>
+    <meta charset="UTF-8" />
+    <script src="jquery/jquery.1-7-2-pre.js" charset="utf-8"></script>
+    <script src="jquery.breakup.js" charset="utf-8"></script>
+    <style type="text/css" media="screen">
+      body {
+        background-color: #D0E0F8;
+        color: white;
+        font-family: Garamond, sans-serif;
+        font-size: 2rem;
+        margin: 0;
+        text-align: center;
+      }
+      .box {
+        border: 3px solid white;
+        -webkit-box-shadow: -2px 3px 4px 0 rgba(0, 0, 0, 0.5);
+        -moz-box-shadow: -2px 3px 4px 0 rgba(0, 0, 0, 0.5);
+        box-shadow: -2px 3px 4px 0 rgba(0, 0, 0, 0.5);
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        height: 60px;
+        padding: 5px;
+        position: absolute;
+        text-shadow: -1px 1px 2px rgba(0, 0, 0, 0.3333);
+        width: 80px;
+      }
+      #box-1 {
+        background-color: #ffec11;
+        top: 5px;
+      }
+      #box-2 {
+        background-color: #45e21a;
+        top: 70px;
+      }
+      #box-3 {
+        background-color: #f14900;
+        top: 135px;
+      }
+      #box-4 {
+        background-color: #1aa8fa;
+        top: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="box-1" class="box">1</div>
+    <div id="box-2" class="box">2</div>
+    <div id="box-3" class="box">3</div>
+    <div id="box-4" class="box">4</div>
+    <script charset="utf-8">
+      (function ($) {
+        function small(event) {
+          var top = 0;
+          var factor = 20;
+          var $this = $(this);
+          $this
+          .each(function (index, element) {
+            var $this = $(this);
+            $this
+            .animate({
+              left: 0,
+              top: top
+            }, 'fast');
+            top += $this.outerHeight() + factor;
+          });
+        }
+        function narrow(event) {
+          var top = 0;
+          var left = 0;
+          var factor = 20;
+          var $this = $(this);
+          $this
+          .each(function (index, element) {
+            var $this = $(this);
+            $this
+            .animate({
+              left: left,
+              top: top
+            }, 'fast');
+            top += $this.outerHeight() + factor;
+            left += $this.outerWidth() + factor;
+          });
+        }
+        function tablet(event) {
+          var $this = $(this);
+          var left = 0;
+          var factor = 20;
+          $this
+          .each(function (index, element) {
+            var $this = $(this);
+            $this
+            .animate({
+              left: left,
+              top: 0
+            }, 'fast');
+            left += $this.outerWidth() + factor;
+          });
+        }
+        function desktop(event) {
+          var top = 10;
+          var left = 0;
+          var factor = 20;
+          var totalHeight = 0;
+          var $this = $(this);
+          $this
+          .each(function (index, element) {
+            if (index > 0) {
+              totalHeight += $(this).outerHeight() + factor;
+            }
+          })
+          .each(function (index, element) {
+            var $this = $(this);
+            $this
+            .animate({
+              left: left,
+              top: totalHeight
+            }, 'fast');
+            totalHeight -= ($this.outerHeight() + factor);
+            left += $this.outerWidth() + factor;
+          });
+        }
+        function large(event) {
+          var top = 10;
+          var left = 0;
+          var factor = 20;
+          var totalHeight = 0;
+          var totalWidth = 0;
+          var $this = $(this);
+          $this
+          .each(function (index, element) {
+            if (index > 0) {
+              totalHeight += $(this).outerHeight() + factor;
+              totalWidth += $(this).outerWidth() + factor;
+            }
+          })
+          .each(function (index, element) {
+            var $this = $(this);
+            $this
+            .animate({
+              left: totalWidth,
+              top: totalHeight
+            }, 'fast');
+            totalHeight -= ($this.outerHeight() + factor);
+          });
+        }
+        
+        // Instantiate the plugin.
+        $('div')
+        .breakup({
+          'default': small,
+          '450': narrow,
+          '600': tablet,
+          '750': desktop,
+          '900': large
+        }, 'exampleNamespace', 'some extra data');
+      }(jQuery));
+      
+    </script>
+  </body>
+</html>
