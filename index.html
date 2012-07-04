@@ -51,9 +51,12 @@
     <div id="box-2" class="box">2</div>
     <div id="box-3" class="box">3</div>
     <div id="box-4" class="box">4</div>
+    <p>hi</p>
+    <p>there</p>
     <script charset="utf-8">
       (function ($) {
         function small(event) {
+          var args = arguments;
           var top = 0;
           var factor = 20;
           var $this = $(this);
@@ -147,16 +150,34 @@
             totalHeight -= ($this.outerHeight() + factor);
           });
         }
+        function near() {
+          $(this)
+          .animate({
+            'font-size': '4em'
+          }, 'slow');
+        }
+        function far() {
+          $(this)
+          .animate({
+            'font-size': '0.5em'
+          });
+        }
         
         // Instantiate the plugin.
         $('div')
-        .breakup({
+        var $switcher = new $.BreakUp({
           'default': small,
           '450': narrow,
           '600': tablet,
           '750': desktop,
           '900': large
-        }, 'exampleNamespace', 'some extra data');
+        }, $('div'), 'exampleNamespace', 'some extra data');
+        console.log($switcher.listBreakPoints());
+        var paragrapher = new $.BreakUp({
+          '0': near,
+          '600': far
+        }, $('p'));
+        console.log(paragrapher.listBreakPoints());
       }(jQuery));
       
     </script>
