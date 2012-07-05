@@ -59,8 +59,7 @@
           var args = arguments;
           var top = 0;
           var factor = 20;
-          var $this = $(this);
-          $this
+          this
           .each(function (index, element) {
             var $this = $(this);
             $this
@@ -72,11 +71,11 @@
           });
         }
         function narrow(event) {
+          var args = arguments;
           var top = 0;
           var left = 0;
           var factor = 20;
-          var $this = $(this);
-          $this
+          this
           .each(function (index, element) {
             var $this = $(this);
             $this
@@ -89,10 +88,9 @@
           });
         }
         function tablet(event) {
-          var $this = $(this);
           var left = 0;
           var factor = 20;
-          $this
+          this
           .each(function (index, element) {
             var $this = $(this);
             $this
@@ -108,8 +106,7 @@
           var left = 0;
           var factor = 20;
           var totalHeight = 0;
-          var $this = $(this);
-          $this
+          this
           .each(function (index, element) {
             if (index > 0) {
               totalHeight += $(this).outerHeight() + factor;
@@ -132,8 +129,7 @@
           var factor = 20;
           var totalHeight = 0;
           var totalWidth = 0;
-          var $this = $(this);
-          $this
+          this
           .each(function (index, element) {
             if (index > 0) {
               totalHeight += $(this).outerHeight() + factor;
@@ -151,13 +147,14 @@
           });
         }
         function near() {
-          $(this)
+          var args = arguments;
+          this
           .animate({
             'font-size': '4em'
           }, 'slow');
         }
         function far() {
-          $(this)
+          this
           .animate({
             'font-size': '0.5em'
           });
@@ -171,13 +168,13 @@
           '600': tablet,
           '750': desktop,
           '900': large
-        }, $('div'), 'exampleNamespace', 'some extra data');
+        }, {namespace: 'exampleNamespace'}, $('div'), 'some extra data');
         console.log($switcher.listBreakPoints());
-        var paragrapher = new $.BreakUp({
+        var $paragrapher = new $.BreakUp({
           '0': near,
           '600': far
-        }, $('p'));
-        console.log(paragrapher.listBreakPoints());
+        }, 'p', {random: 'object'}, function hello() {}, 'more arguments to use', true, false);
+        console.log($paragrapher.listBreakPoints());
       }(jQuery));
       
     </script>
