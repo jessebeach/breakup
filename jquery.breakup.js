@@ -82,34 +82,44 @@
     return window.innerWidth || document.documentElement.offsetWidth || document.documentElement.clientWidth;
   }
   // Add the plugin as a property of the jQuery fn object.
-  $[plugin] = function () {
+  $[plugin] = function BreakUp() {
     // State variables.
     var currentBreak;
     var breakPoints = {};
     var updated = false;
+    var namespace;
     // Public functions.
     this.listBreakPoints = listBreakPoints;
+    this.getNameSpace = getNameSpace;
     /**
      * Build a new BreakUp object.
      */
-    function initialize (opts, elements) {    // Build main options before element iteration.
-      var options = $.extend({}, defaults, opts);
+    function initialize (options, elements, namespace) {
+      // Determine if options were passed in.
+      // There are no options or elements.
+      if (typeof options === 'string' || (typeof options === 'object' && 'jquery' in options)) {
+        log('No options were provided for BreakUp to act on.', 'info');
+        return;
+      }
+      // Merge user options with default options.
+      var opts = $.extend({}, defaults, options);
       // Strip the opts from the arguments list.
       Array.prototype.shift.call(arguments);
       // Unshift the options back into the arguments.
-      Array.prototype.unshift.call(arguments, options);
+      Array.prototype.unshift.call(arguments, opts);
       // Create a context from the supplied elements
       var $this = $(arguments[1]);
       // Register the callbacks.
       setBreakPoints.apply($this, arguments);
-      // Register a custom 'breakChanged' event on the document.
-      $this.bind('breakChanged' + '.' + plugin, breakChangeHandler);
+      // User the supplied namespace or a default.
+      namespace = (namespace !== undefined && typeof namespace === 'string' && namespace.length > 0) ? namespace : plugin;
+      setNameSpace.call(this, namespace);
+      // Register a custom 'breakChanged' event on the context.
+      $this.bind('breakChanged' + '.' + namespace, breakChangeHandler);
       // Register a handler on the window resize event.
       var f = buildProxy(breakCheck, $this);
-      $(window).bind('resize' + '.' + plugin, f);
-      $(window).bind('load' + '.' + plugin, f);
-      // Public methods
-      this.listBreakPoints = listBreakPoints;
+      $(window).bind('resize' + '.' + namespace, f);
+      $(window).bind('load' + '.' + namespace, f);
     } 
     /**
      * Given an object of breakpoint properties and functions associated with those properties,
@@ -170,7 +180,7 @@
       return candidate;
     }
     /**
-     *
+     * Returns the stored set of breakpoints and their functions.
      */
     function listBreakPoints() {
       return breakPoints;
@@ -195,13 +205,14 @@
       }
     }
     /**
-     *
+     * Get the function associated with a stored breakpoint.
      */
     function getBreakPointHandler () {
       return breakPoints[getBreakPoint()];
     }
     /**
-     *
+     * Check to see if the screen is in a new breakpoint. Also
+     * called on page load.
      */
     function breakCheck (event) {
       var $this = $(this);
@@ -213,7 +224,19 @@
         $this.trigger('breakChanged');
       }
     }
-    // Method calling logic
+    /**
+     *
+     */
+    function setNameSpace(ns) {
+      namespace = ns;
+    }
+    /**
+     * 
+     */
+    function getNameSpace() {
+      return namespace;
+    }
+    // Return a new BreakUp object.
     return initialize.apply(this, arguments);
   };
 }));
