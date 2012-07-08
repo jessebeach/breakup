@@ -169,12 +169,10 @@
           '750': desktop,
           '900': large
         }, {namespace: 'exampleNamespace'}, $('div'), 'some extra data');
-        console.log($switcher.listBreakPoints());
         var $paragrapher = new $.BreakUp({
           '0': near,
           '600': far
         }, 'p', {random: 'object'}, function hello() {}, 'more arguments to use', true, false);
-        console.log($paragrapher.listBreakPoints());
       }(jQuery));
       
     </script>
