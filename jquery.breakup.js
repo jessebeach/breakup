@@ -10,7 +10,7 @@
  * Register arbitrary functions to be fired against jQuery objects when
  * specified break points are entered.
  *
- * Author: Jesse Renée Beach
+ * Author: Jesse Renee Beach
  * Author URI: http://qemist.us
  * Author Twitter: @jessebeach
  * Author Github: https://github.com/jessebeach
@@ -27,7 +27,7 @@
     // If jQuery is not defined, warn the user and return.
     if (window.jQuery === undefined) {
       if (typeof window.console === 'object' && typeof window.console.log === 'function') {
-        console.log("The plugin \"pluginName\" failed to run because jQuery is not present.");
+        console.log("The plugin \"BreakUp\" failed to run because jQuery is not present.");
       }
       return null;
     }
@@ -37,80 +37,49 @@
 }
 // The plugin factory function.
 (function () {
-  // Replace 'pluginName' with the name of your plugin.
-  var plugin = 'BreakUp';
+  var pluginName = 'BreakUp';
+  var $ = jQuery;
   // plugin defaults
   var defaults = {
-    '0': $.noop
-  }
-	/**
-   * Simple console logging utility that won't blow up in older browsers.
-   */
-  function log (message, type) {
-    if ('console' in window) {
-      var type = type || 'log';
-      console[type](message);
+    'breakpoints': {
+      '0': $.noop
+    },
+    'options': {
+      'namespace': pluginName
     }
-  }
-  /**
-   * Returns a function with 'this' set as the context object.
-   *
-   * All additional arguments are passed through to the returned function.
-   */
-  function buildProxy(fn, context) {
-    var f = fn;
-    var c = context;
-    // Pull the top two args -- fn and context -- off the arguments array.
-    for (var i = 0; i < 2; i++) {
-      Array.prototype.shift.call(arguments);
-    }
-    // Get a local reference to the arguments.
-    var args = Array.prototype.slice.call(arguments);
-    return (function () {
-      // Push the callers arguments into the arguments list.
-      // This will most likely be an $.Event object.
-      for (var i = 0; i < arguments.length; i++) {
-        args.unshift(arguments[i]);
-      }
-      f.apply(c, args);
-    });
-  }
-  /**
-  * Get the screen width.
-  */
-  function getScreenWidth () {
-    return window.innerWidth || document.documentElement.offsetWidth || document.documentElement.clientWidth;
   }
   // Add the plugin as a property of the jQuery fn object.
-  $[plugin] = function BreakUp() {
-    // State variables.
-    var currentBreak;
-    var breakPoints = {};
-    var updated = false;
-    var namespace = plugin;
-    var $elements = $();
+  $[pluginName] = (function () {
+    // Functions for manipulating the arguments variable.
     var shift = Array.prototype.shift;
     var unshift = Array.prototype.unshift;
     var slice = Array.prototype.slice;
     var splice = Array.prototype.splice;
-    var fn;
-    // Public functions.
-    this.listBreakPoints = listBreakPoints;
-    this.getNameSpace = getNameSpace;
     /**
      * Build a new BreakUp object.
      */
-    function initialize (breakpoints, options, selector) {
+    function BreakUp() {
+      this.currentBreak = undefined;
+      this.breakPoints = {};
+      this.updated = false;
+      this.namespace = pluginName;
+      this.$elements = $();
+      // Initialize the plugin instance.
+      this.initialize.apply(this, arguments);
+    }
+     
+    BreakUp.prototype.initialize = function (breakpoints, options, selector) {
+      var bp, opts, fn;
       // Determine if breakpoints were passed in. If not, return, there's nothing to do.
       if (typeof breakpoints === 'string' || (typeof breakpoints === 'object' && 'jquery' in breakpoints)) {
-        log('[' + plugin + '] No breakpoints were provided for BreakUp to act on.', 'info');
+        this.log('[' + pluginName + '] No breakpoints were provided for BreakUp to act on.', 'info');
         return;
       }
       // Merge user options with default options.
-      var bp = $.extend({}, defaults, breakpoints);
-      // Strip the opts from the arguments list.
+      bp = $.extend({}, defaults['breakpoints'], breakpoints);
+      // Strip the breakpoints from the arguments list.
       shift.call(arguments);
-      // Unshift the options back into the arguments.
+      // Unshift the merged breakpoints back into the arguments.
       unshift.call(arguments, bp);
       // Options is a jquery object or selector
       if ((typeof options === 'object' && 'jquery' in options) || typeof options === 'string') {
@@ -119,43 +88,42 @@
       }
       // Process the options.
       if (options) {
-        namespace = (options && 'namespace' in options && typeof options.namespace === 'string' && options.namespace.length > 0) ? options.namespace : plugin;
+        opts = $.extend({}, defaults['options'], options);
+        this.namespace = opts.namespace;
+        // More options to come...
       }
       // A selector is necessary to create a context. It cannot be empty. First check
       // for a string selector.
       if (typeof selector === 'string' || selector === window || selector === document) {
-        $elements = $(selector);
+        this.$elements = $(selector);
         // If the selector was provided as something other than a jQuery obejct,
         // we need to replace the corresponding argument with the jQuery selector version.
-        splice.call(arguments, 2, 1, $elements);
+        splice.call(arguments, 2, 1, this.$elements);
       }
       // Then check for a jQuery object. 
       else if (typeof selector === 'object' && 'jquery' in selector) {
-        $elements = selector;
+        this.$elements = selector;
       }
       // If the selector matched nothing, error out.
-      if ($elements.length === 0) {
-        log('[' + plugin + '] Neither a jQuery object nor a valid selector were provided for BreakUp to act on.', 'info');
+      if (this.$elements.length === 0) {
+        this.log('[' + pluginName + '] Neither a jQuery object nor a valid selector were provided for BreakUp to act on.', 'info');
         return;
       }
       // The arguments should only contain the breakpoints, the context elements,
       // and additional arguments for the callbacks from this point on.
-      // The options are needed only for initialization, we remove them.
+      // The options are needed only for initialization, so we remove them.
       splice.call(arguments, 1, 1);
-      // Register the callbacks.
-      setBreakPoints.apply(this, arguments);
-      // Register a custom 'breakChanged' event on the context.
-      $elements.bind('breakChanged' + '.' + namespace, breakChangeHandler);
-      // Register a handler on the window resize event.
-      fn = buildProxy.call(this, breakCheck, $elements);
-      $(window).bind('resize' + '.' + namespace, fn);
-      $(window).bind('load' + '.' + namespace, fn);
+      this.registerBreakPoints.apply(this, arguments);
+      // Register a handler on the window resize and load events.
+      fn = this.buildProxy(this.breakCheck, this);
+      $(window).bind('resize' + '.' + this.namespace, fn);
+      $(window).bind('load' + '.' + this.namespace, fn);
     } 
     /**
      * Given an object of breakpoint properties and functions associated with those properties,
      * store them internally for reference later.
      */
-    function setBreakPoints(breakpoints) {
+    BreakUp.prototype.registerBreakPoints = function (breakpoints) {
       var bps = breakpoints;
       var br;
       var index;
@@ -166,7 +134,7 @@
         for (br in bps) {
           if (bps.hasOwnProperty(br)) {
             if (isNaN(br) && br !== 'default') {
-              log('[' + plugin + '] The breakpoint property name \"' + br + '\" is not valid. The property must convert to a number or be the word \"default\".', 'info');
+              this.log('[' + pluginName + '] The breakpoint property name \"' + br + '\" is not valid. The property must convert to a number or be the word \"default\".', 'info');
               continue;
             }
             if (typeof bps[br] === 'function') {
@@ -176,12 +144,12 @@
               unshift.call(arguments, bps[br]);
               var args = slice.call(arguments);
               // Build a proxy from the function and store it.
-              breakPoints[index] = buildProxy.apply(this, arguments);
+              this.breakPoints[index] = this.buildProxy.apply(this, arguments);
               // Shift the function off the arguments.
               shift.call(arguments);
             }
             else {
-              log('[' + plugin + '] ' + bps[br] + ', for the breakpoint ' + br + ' is not a function.', 'info');
+              this.log('[' + pluginName + '] ' + bps[br] + ', for the breakpoint ' + br + ' is not a function.', 'info');
             }
           }
         }
@@ -193,12 +161,12 @@
      * @return (String) candidate: the number-as-a-string index in the list of breakPoints
      * of the current break point as determined by the screen size.
      */
-    function getBreakPoint () {
+    BreakUp.prototype.getBreakPoint = function () {
       var br;
       var candidate;
-      var screen = getScreenWidth();
-      for (br in breakPoints) {
-        if (breakPoints.hasOwnProperty(br)) {
+      var screen = this.getScreenWidth();
+      for (br in this.breakPoints) {
+        if (this.breakPoints.hasOwnProperty(br)) {
           if (Number(br) <= screen && (Number(br) > Number(candidate) || Number(br) === 0)) {
             candidate = br;
           }
@@ -209,61 +177,99 @@
     /**
      * Returns the stored set of breakpoints and their functions.
      */
-    function listBreakPoints() {
-      return breakPoints;
+    BreakUp.prototype.listBreakPoints = function () {
+      return this.breakPoints;
     }
      /**
      * Get the current break point and call the function associated with it.
      */
-    function breakChangeHandler(event) {
+    BreakUp.prototype.breakChangeHandler = function (event) {
       // updated will be set to false when a new breakpoint is encountered.
-      if (!updated) {
-        var $this = $(this);
-        var callback = getBreakPointHandler();
+      if (!this.updated) {
+        var callback = this.getBreakPointHandler();
         if (typeof callback === 'function') {
           // Pass the event object through to the callback.
           callback(event);
-          updated = true;
+          this.updated = true;
           return;
         }
         else {
-          log('[' + plugin + '] The handler for the current breakpoint is not a function.', 'info');
+          this.log('[' + pluginName + '] The handler for the current breakpoint is not a function.', 'info');
         }
       }
     }
     /**
      * Get the function associated with a stored breakpoint.
      */
-    function getBreakPointHandler () {
-      return breakPoints[getBreakPoint()];
+    BreakUp.prototype.getBreakPointHandler = function () {
+      return this.breakPoints[this.getBreakPoint()];
     }
     /**
      * Check to see if the screen is in a new breakpoint. Also
      * called on page load.
      */
-    function breakCheck (event) {
-      var $this = $(this);
-      var br = getBreakPoint();
-      if (currentBreak !== br) {
-        // Save the current breakpoint in this scope.
-        currentBreak = br;
-        updated = false;
-        $this.trigger('breakChanged');
+    BreakUp.prototype.breakCheck = function (event) {
+      var br = this.getBreakPoint();
+      if (this.currentBreak !== br) {
+        // Note the current breakpoint.
+        this.currentBreak = br;
+        this.updated = false;
+        // And do something.
+        this.breakChangeHandler(event);
       }
+    }
+    
+    /**
+     * Returns a function with 'this' set as the context object.
+     *
+     * All additional arguments are passed through to the returned function.
+     */
+    BreakUp.prototype.buildProxy = function (fn, context) {
+      var f = fn;
+      var c = context;
+      // Pull the top two args -- fn and context -- off the arguments array.
+      for (var i = 0; i < 2; i++) {
+        Array.prototype.shift.call(arguments);
+      }
+      // Get a local reference to the arguments.
+      var args = Array.prototype.slice.call(arguments);
+      return (function () {
+        // Push the callers arguments into the arguments list.
+        // This will most likely be an $.Event object.
+        for (var i = 0; i < arguments.length; i++) {
+          args.unshift(arguments[i]);
+        }
+        f.apply(c, args);
+      });
+    }
+    /**
+    * Get the screen width.
+    */
+    BreakUp.prototype.getScreenWidth = function () {
+      return window.innerWidth || document.documentElement.offsetWidth || document.documentElement.clientWidth;
     }
     /**
      *
      */
-    function setNameSpace(ns) {
-      namespace = ns;
+    BreakUp.prototype.setNameSpace = function (ns) {
+      this.namespace = ns;
     }
     /**
      * 
      */
-    function getNameSpace() {
-      return namespace;
+    BreakUp.prototype.getNameSpace = function () {
+      return this.namespace;
+    }
+  	/**
+     * Simple console logging utility that won't blow up in older browsers.
+     */
+    BreakUp.prototype.log = function (message, type) {
+      if ('console' in window) {
+        var type = type || 'log';
+        console[type](message);
+      }
     }
     // Return a new BreakUp object.
-    return initialize.apply(this, arguments);
-  };
+    return BreakUp;
+  }());
 }));
