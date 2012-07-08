@@ -1,8 +1,8 @@
 /*jslint bitwise: true, eqeqeq: true, immed: true, newcap: true, nomen: false,
- onevar: false, plusplus: false, regexp: true, undef: true, white: true, indent: 4
+ onevar: false, plusplus: false, regexp: true, undef: true, white: false, indent: 2
  browser: true */
 
-/*global window: true define: true */
+/*global window: true define: true jQuery: true */
 
 /**
  * A jQuery plugin.
@@ -47,7 +47,7 @@
     'options': {
       'namespace': pluginName
     }
-  }
+  };
   // Add the plugin as a property of the jQuery fn object.
   $[pluginName] = (function () {
     // Functions for manipulating the arguments variable.
@@ -76,7 +76,7 @@
         return;
       }
       // Merge user options with default options.
-      bp = $.extend({}, defaults['breakpoints'], breakpoints);
+      bp = $.extend({}, defaults.breakpoints, breakpoints);
       // Strip the breakpoints from the arguments list.
       shift.call(arguments);
       // Unshift the merged breakpoints back into the arguments.
@@ -88,7 +88,7 @@
       }
       // Process the options.
       if (options) {
-        opts = $.extend({}, defaults['options'], options);
+        opts = $.extend({}, defaults.options, options);
         this.namespace = opts.namespace;
         // More options to come...
       }
@@ -118,7 +118,7 @@
       fn = this.buildProxy(this.breakCheck, this);
       $(window).bind('resize' + '.' + this.namespace, fn);
       $(window).bind('load' + '.' + this.namespace, fn);
-    } 
+    };
     /**
      * Given an object of breakpoint properties and functions associated with those properties,
      * store them internally for reference later.
@@ -154,7 +154,7 @@
           }
         }
       }
-    }
+    };
     /**
      * Gets the current breakpoint.
      *
@@ -173,13 +173,13 @@
         }
       }
       return candidate;
-    }
+    };
     /**
      * Returns the stored set of breakpoints and their functions.
      */
     BreakUp.prototype.listBreakPoints = function () {
       return this.breakPoints;
-    }
+    };
      /**
      * Get the current break point and call the function associated with it.
      */
@@ -197,13 +197,13 @@
           this.log('[' + pluginName + '] The handler for the current breakpoint is not a function.', 'info');
         }
       }
-    }
+    };
     /**
      * Get the function associated with a stored breakpoint.
      */
     BreakUp.prototype.getBreakPointHandler = function () {
       return this.breakPoints[this.getBreakPoint()];
-    }
+    };
     /**
      * Check to see if the screen is in a new breakpoint. Also
      * called on page load.
@@ -217,7 +217,7 @@
         // And do something.
         this.breakChangeHandler(event);
       }
-    }
+    };
     
     /**
      * Returns a function with 'this' set as the context object.
@@ -233,42 +233,42 @@
       }
       // Get a local reference to the arguments.
       var args = Array.prototype.slice.call(arguments);
-      return (function () {
+      return function () {
         // Push the callers arguments into the arguments list.
         // This will most likely be an $.Event object.
         for (var i = 0; i < arguments.length; i++) {
           args.unshift(arguments[i]);
         }
         f.apply(c, args);
-      });
-    }
+      };
+    };
     /**
     * Get the screen width.
     */
     BreakUp.prototype.getScreenWidth = function () {
       return window.innerWidth || document.documentElement.offsetWidth || document.documentElement.clientWidth;
-    }
+    };
     /**
      *
      */
     BreakUp.prototype.setNameSpace = function (ns) {
       this.namespace = ns;
-    }
+    };
     /**
      * 
      */
     BreakUp.prototype.getNameSpace = function () {
       return this.namespace;
-    }
+    };
   	/**
      * Simple console logging utility that won't blow up in older browsers.
      */
     BreakUp.prototype.log = function (message, type) {
       if ('console' in window) {
-        var type = type || 'log';
-        console[type](message);
+        var t = type || 'log';
+        console[t](message);
       }
-    }
+    };
     // Return a new BreakUp object.
     return BreakUp;
   }());
